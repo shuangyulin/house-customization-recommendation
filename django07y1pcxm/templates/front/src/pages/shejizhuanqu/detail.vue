@@ -1,0 +1,1072 @@
+<template>
+	<div>
+	<!--  -->
+		<div class="breadcrumb-preview">
+			<el-breadcrumb :separator="'——'">
+				<el-breadcrumb-item class="item1" to="/"><a>首页</a></el-breadcrumb-item>
+				<el-breadcrumb-item class="item2" v-for="(item, index) in breadcrumbItem" :key="index" :to="'/index/shejizhuanqu?centerType=' + (centerType?'1':'0')"><a>{{item.name}}</a></el-breadcrumb-item>
+				<el-breadcrumb-item class="item3"><a href="javascript:void(0);">详情</a></el-breadcrumb-item>
+			</el-breadcrumb>
+		</div>
+		<div class="back_box">
+			<el-button class="backBtn" size="mini" @click="backClick">
+				<span class="icon iconfont icon-jiantou33"></span>
+				<span class="text">返回</span>
+			</el-button>
+		</div>
+		<div class="detail-preview">
+			<div class="attr">
+				<div class="info">
+					<div class="title-item">
+						<div class="detail-title">
+							{{detail.shejizhuti}}
+						</div>
+						<div class="colectBtn" @click="storeup(1)" v-show="!isStoreup">
+							<i class="icon iconfont icon-shoucang12"></i>
+							<span class="text">收藏({{detail.storeupnum}})</span>
+						</div>
+						<div class="colectBtnActive" @click="storeup(-1)" v-show="isStoreup">
+							<i class="icon iconfont icon-shoucang12"></i>
+							<span class="text">已收藏({{detail.storeupnum}})</span>
+						</div>
+					</div>
+					<div class="item">
+						<div class="lable">设计类型</div>
+						<div class="text "  >{{detail.shejileixing}}</div>
+					</div>
+					<div class="item">
+						<div class="lable">灵感来源</div>
+						<div class="text "  >{{detail.lingganlaiyuan}}</div>
+					</div>
+					<div class="item">
+						<div class="lable">设计元素</div>
+						<div class="text "  >{{detail.shejiyuansu}}</div>
+					</div>
+					<div class="item">
+						<div class="lable">功能布局</div>
+						<div class="text "  >{{detail.gongnengbuju}}</div>
+					</div>
+					<div class="item">
+						<div class="lable">技术与工艺</div>
+						<div class="text "  >{{detail.jishuyugongyi}}</div>
+					</div>
+					<div class="item">
+						<div class="lable">设计师账号</div>
+						<div class="text "  >{{detail.shejishizhanghao}}</div>
+					</div>
+					<div class="item">
+						<div class="lable">设计师姓名</div>
+						<div class="text "  >{{detail.shejishixingming}}</div>
+					</div>
+					<div class="btn_box">
+						<el-button class="editBtn" v-if="btnAuth('shejizhuanqu','修改')" @click="editClick">修改</el-button>
+						<el-button class="delBtn" v-if="btnAuth('shejizhuanqu','删除')" @click="delClick">删除</el-button>
+						<el-button class="chatBtn" v-if="btnAuth('shejizhuanqu','私聊')&&detail.id!=mid" @click="chatClick">联系TA</el-button>
+					</div>
+				</div>
+			</div>
+		
+			<div class="detail-swpier2" v-if="detailBanner.length">
+				<div class="swiper21">
+					<div class="swiper-container mySwiper21">
+						<div class="swiper-wrapper">
+							<div class="swiper-slide" v-for="item in detailBanner" :key="item.id">
+								<div class="swiper-item">
+									<img v-if="item.substr(0,4)=='http'" :src="item" class="image">
+									<img v-else :src="baseUrl + item" class="image">
+								</div>
+							</div>
+						</div>
+						<div class="swiper-button-prev">
+							<span class="icon iconfont icon-jiantou39"></span>
+						</div>
+						<div class="swiper-button-next">
+							<span class="icon iconfont icon-jiantou18"></span>
+						</div>
+					</div>
+				</div>
+				<div class="swiper22">
+					<div class="swiper-container mySwiper22">
+						<div class="swiper-wrapper">
+							<div class="swiper-slide" v-for="item in detailBanner" :key="item.id">
+								<div class="swiper-item">
+									<img v-if="item.substr(0,4)=='http'" :src="item" class="image">
+									<img v-else :src="baseUrl + item" class="image">
+								</div>
+							</div>
+						</div>
+						<div class="swiper-button-prev">
+							<span class="icon iconfont icon-jiantou39"></span>
+						</div>
+						<div class="swiper-button-next">
+							<span class="icon iconfont icon-jiantou18"></span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+
+		
+
+			<el-tabs class="detail-tabs" v-model="activeName" type="border-card" v-if="tabsNum>0" >
+				<el-tab-pane label="设计详情" name="first">
+					<div class="ql-snow ql-editor" v-html="detail.shejixiangqing"></div>
+				</el-tab-pane>
+			</el-tabs>
+
+			<div class="idea1"></div>
+			<div class="idea2"></div>
+		</div>
+		<div class="share_view">
+		</div>
+		<el-dialog :visible.sync="chatVisible" @close="clearChat" :title="fname">
+			<div class="chat-content" id="chat-content">
+				<div v-bind:key="item.id" v-for="item in chatList">
+					<div v-if="item.addtime" class="addtime">{{timeFormat(item.addtime)}}</div>
+					<div v-if="item.uid==mid" class="right-content">
+						<el-alert v-if="item.format==1" class="text-content" :title="item.content" :closable="false"
+							type="warning"></el-alert>
+						<el-image v-else fit="cover" :src="item.content?baseUrl + item.content:''" style="width: 100px;height: 100px;" :preview-src-list="[item.content?baseUrl + item.content:'']"></el-image>
+						<img :src="mpic?baseUrl + mpic:require('@/assets/avator.png')" alt="" style="width: 30px;border-radius: 50%;height: 30px;margin: 0 0 0 10px;" />
+					</div>
+					<div v-else class="left-content">
+						<img :src="fpic?baseUrl + fpic:require('@/assets/avator.png')" alt="" style="width: 30px;border-radius: 50%;height: 30px;margin: 0 10px 0 0;" />
+						<el-alert v-if="item.format==1" class="text-content" :title="item.content" :closable="false"
+							type="success"></el-alert>
+						<el-image v-else fit="cover" :src="item.content?baseUrl + item.content:''" style="width: 100px;height: 100px;" :preview-src-list="[item.content?baseUrl + item.content:'']"></el-image>
+						
+					</div>
+					<div class="clear-float"></div>
+				</div>
+			</div>
+			<div slot="footer" class="dialog-footer">
+				<el-input size="small" @keydown.enter.native="addChat(null)" v-model="chatForm.content" placeholder="请输入内容" style="width: calc(100% - 240px);float: left;">
+				</el-input>
+				<el-button size="small" :disabled="chatForm.content?false:true" type="primary" @click="addChat(null)">发送</el-button>
+				<el-upload style="display: inline-block;margin: 0 6px;" class="upload-demo" :action="uploadUrl" :on-success="uploadSuccess"
+					:show-file-list="false">
+					<el-button size="small" type="success">上传图片</el-button>
+				</el-upload>
+				<el-button v-if="showSaveType" size="small" type="primary" @click="saveGood">详情图发送</el-button>
+			</div>
+		</el-dialog>
+	</div>
+</template>
+
+<script>
+	import axios from 'axios'
+	import Swiper from "swiper";
+	import timeMethod from '@/common/timeMethod'
+	import {
+		WebsocketMixin
+	} from '@/mixins/WebsocketMixin'
+	export default {
+		mixins: [WebsocketMixin],
+		//数据集合
+		data() {
+			return {
+				tablename: 'shejizhuanqu',
+				baseUrl: '',
+				breadcrumbItem: [
+					{
+						name: '设计专区'
+					}
+				],
+				title: '',
+				detailBanner: [],
+				userid: Number(localStorage.getItem('frontUserid')),
+				id: 0,
+				detail: {},
+				tabsNum: 1,
+				activeName: 'first',
+				total: 1,
+				pageSize: 10,
+				totalPage: 1,
+				storeupParams: {
+					name: '',
+					picture: '',
+					refid: 0,
+					tablename: 'shejizhuanqu',
+					userid: Number(localStorage.getItem('frontUserid'))
+				},
+				isStoreup: false,
+				storeupInfo: {},
+				buynumber: 1,
+				centerType: false,
+				storeupType: false,
+				shareUrl: location.href,
+				mid: Number(localStorage.getItem('frontUserid')),
+				chatVisible: false,
+				chatList: [],
+				chatForm: {
+					content: ''
+				},
+				uploadUrl: this.$config.baseUrl + 'file/upload',
+				fpic: '',
+				fname: '',
+				fid: '',
+				mpic: localStorage.getItem('frontHeadportrait'),
+				showSaveType: true,
+			}
+		},
+		created() {
+			if(this.$route.query.centerType&&this.$route.query.centerType!=0) {
+				this.centerType = true
+			}
+			if(this.$route.query.storeupType&&this.$route.query.storeupType!=0) {
+				this.storeupType = true
+			}
+			
+			this.init();
+		},
+		mounted() {
+			setTimeout(()=>{
+				let mySwiper22 = new Swiper(".mySwiper22", {"navigation":{"nextEl":".swiper-button-next","prevEl":".swiper-button-prev"},"freeMode":true,"watchSlidesVisibility":true,"watchSlidesProgress":true,"loopedSlides":5,"slidesPerView":3,"spaceBetween":30})
+				let option21 = {...{"navigation":{"nextEl":".swiper-button-next","prevEl":".swiper-button-prev"},"loopedSlides":5,"spaceBetween":10}}
+				option21.thumbs = {
+					swiper: mySwiper22
+				}
+				new Swiper(".mySwiper21", option21)
+			},100)
+		},
+		//方法集合
+		methods: {
+			init() {
+				this.id = this.$route.query.id
+				this.baseUrl = this.$config.baseUrl;
+				this.$http.get(this.tablename + '/detail/'  + this.id, {}).then(res => {
+					if (res.data.code == 0) {
+						this.detail = res.data.data;
+						this.title = this.detail.shejizhuti;
+						if(this.detail.xiaoguozhanshi) {
+							this.detailBanner = this.detail.xiaoguozhanshi.split(",w").length>1?[this.detail.xiaoguozhanshi]:this.detail.xiaoguozhanshi.split(',');
+						}
+						if(res.data.data.touxiang){
+							this.fpic = res.data.data.touxiang.split(',')[0]
+						}else if(res.data.data.headportrait){
+							this.fpic = res.data.data.headportrait.split(',')[0]
+						}
+						this.$forceUpdate();
+						if(localStorage.getItem('frontToken')){
+							this.getStoreupStatus();
+						}
+
+					}
+				});
+			},
+			storeup(type) {
+				if (type == 1 && !this.isStoreup) {
+					this.storeupParams.name = this.title;
+					this.storeupParams.picture = this.detailBanner[0];
+					this.storeupParams.refid = this.detail.id;
+					this.storeupParams.type = String(type);
+					this.$http.post('storeup/add', this.storeupParams).then(res => {
+						if (res.data.code == 0) {
+							this.isStoreup = true;
+							this.detail.storeupnum++
+							this.$http.post('shejizhuanqu/update', this.detail).then(res => {});
+							this.$message({
+								type: 'success',
+								message: '收藏成功!',
+								duration: 1500,
+							});
+						}
+					});
+				}
+				if (type == -1 && this.isStoreup) {
+					this.$http.get('storeup/list', {params: {page: 1, limit: 1, type: '1', refid: this.detail.id, tablename: 'shejizhuanqu', userid: Number(localStorage.getItem('frontUserid'))}}).then(res => {
+						if (res.data.code == 0 && res.data.data.list.length > 0) {
+							this.isStoreup = true;
+							this.storeupInfo = res.data.data.list[0];
+							let delIds = new Array();
+							delIds.push(this.storeupInfo.id);
+							this.$http.post('storeup/delete', delIds).then(res => {
+								if (res.data.code == 0) {
+									this.isStoreup = false;
+									this.detail.storeupnum--
+									this.$http.post('shejizhuanqu/update', this.detail).then(res => {});
+									this.$message({
+										type: 'success',
+										message: '取消成功!',
+										duration: 1500,
+									});
+								}
+							});
+						}
+					});
+				}
+			},
+			getStoreupStatus(){
+				if(localStorage.getItem("frontToken")) {
+					this.$http.get('storeup/list', {params: {page: 1, limit: 1, type: '1', refid: this.detail.id, tablename: 'shejizhuanqu', userid: Number(localStorage.getItem('frontUserid'))}}).then(res => {
+						if (res.data.code == 0 && res.data.data.list.length > 0) {
+							this.isStoreup = true;
+							this.storeupInfo = res.data.data.list[0];
+						}
+					});
+				}
+			},
+			curChange(page) {
+				this.getDiscussList(page);
+			},
+			prevClick(page) {
+				this.getDiscussList(page);
+			},
+			nextClick(page) {
+				this.getDiscussList(page);
+			},
+			sizeChange(size){
+				this.pageSize = size
+				this.getDiscussList(1);
+			},
+			// 返回按钮
+			backClick(){
+				if(this.storeupType){
+					history.back()
+				}else{
+					let params = {}
+					if(this.centerType){
+						params.centerType = 1
+					}
+					this.$router.push({path: '/index/shejizhuanqu', query: params});
+				}
+			},
+			// 下载
+			download(file ){
+				if(!file) {
+					this.$message({
+						type: 'error',
+						message: '文件不存在',
+						duration: 1500,
+					});
+					return;
+				}
+				let arr = file.replace(new RegExp('upload/', "g"), "")
+				axios.get(this.baseUrl + '/file/download?fileName=' + arr, {
+					headers: {
+						token: localStorage.getItem("frontToken")
+					},
+					responseType: "blob"
+				}).then(({
+					data
+				}) => {
+					const binaryData = [];
+					binaryData.push(data);
+					const objectUrl = window.URL.createObjectURL(new Blob(binaryData, {
+						type: 'application/pdf;chartset=UTF-8'
+					}))
+					const a = document.createElement('a')
+					a.href = objectUrl
+					a.download = arr
+					// a.click()
+					// 下面这个写法兼容火狐
+					a.dispatchEvent(new MouseEvent('click', {
+						bubbles: true,
+						cancelable: true,
+						view: window
+					}))
+					window.URL.revokeObjectURL(data)
+				},err=>{
+					axios.get((location.href.split(this.$config.name).length>1 ? location.href.split(this.$config.name)[0] :'') + this.$config.name + '/file/download?fileName=' + arr, {
+						headers: {
+							token: localStorage.getItem("frontToken")
+						},
+						responseType: "blob"
+					}).then(({
+						data
+					}) => {
+						const binaryData = [];
+						binaryData.push(data);
+						const objectUrl = window.URL.createObjectURL(new Blob(binaryData, {
+							type: 'application/pdf;chartset=UTF-8'
+						}))
+						const a = document.createElement('a')
+						a.href = objectUrl
+						a.download = arr
+						// a.click()
+						// 下面这个写法兼容火狐
+						a.dispatchEvent(new MouseEvent('click', {
+							bubbles: true,
+							cancelable: true,
+							view: window
+						}))
+						window.URL.revokeObjectURL(data)
+					})
+				})
+			},
+
+
+			// 权限判断
+			btnAuth(tableName,key){
+				if(this.centerType){
+					return this.isBackAuth(tableName,key)
+				}else{
+					return this.isAuth(tableName,key)
+				}
+			},
+			// 修改
+			editClick(){
+				this.$router.push(`/index/shejizhuanquAdd?type=edit&&id=${this.detail.id}`);
+			},
+			// 删除
+			async delClick(){
+				await this.$confirm('是否删除此设计专区？') .then(_ => {
+					this.$http.post('shejizhuanqu/delete', [this.detail.id]).then(async res => {
+						if (res.data.code == 0) {
+							this.$http.get('storeup/list',{params:{
+								page: 1,
+								limit: 100,
+								refid: this.detail.id,
+								tablename: 'shejizhuanqu',
+							}}).then(async obj=>{
+								if(obj.data&&obj.data.code==0){
+									let arr = []
+									for(let x in obj.data.data.list){
+										arr.push(obj.data.data.list[x].id)
+									}
+									if(arr.length){
+										await this.$http.post('storeup/delete',arr).then(()=>{})
+									}
+									this.$message({
+										type: 'success',
+										message: '删除成功!',
+										duration: 1500,
+										onClose: () => {
+											history.back()
+										}
+									});
+								}
+							})
+						}
+					});
+				}).catch(_ => {});
+			},
+		
+			chatClick() {
+				let user = JSON.parse(localStorage.getItem('sessionForm'))
+				if(localStorage.getItem('frontSessionTable')=='shejizhuanqu') {
+					if(this.detail.shejishizhanghao == user.shejishizhanghao){
+						this.$message.error('不能给自己发信息')
+						return false
+					}
+				}
+				this.$http.get('shejishi/query', {
+					params: {
+						shejishizhanghao: this.detail.shejishizhanghao
+					}
+				}).then(res => {
+					if (res.data && res.data.code == 0) {
+						this.fid = res.data.data.id
+						this.initWebSocket(this.fid)
+						this.fname = res.data.data.shejishizhanghao
+						if (res.data.data.touxiang) {
+							this.fpic = res.data.data.touxiang.split(',')[0]
+						} else if (res.data.data.headportrait) {
+							this.fpic = res.data.data.headportrait.split(',')[0]
+						}
+						this.getChatList()
+						this.chatVisible = true
+					}
+				})
+			},
+			saveGood(){
+				this.showSaveType = false
+				this.$http.get('friend/page', {
+					params: {
+						uid: Number(localStorage.getItem('frontUserid')),
+						fid: this.fid,
+					}
+				}).then(obj => {
+					if (obj.data && obj.data.code == 0) {
+						if (!obj.data.data.list.length) {
+							this.$http.post('friend/add', {
+								uid: Number(localStorage.getItem('frontUserid')),
+								fid: this.fid,
+								name: this.fname,
+								picture: this.fpic,
+								type: 2,
+								tablename:  'shejishi' ,
+							}).then(res => {
+								this.$http.post('friend/add', {
+									uid: this.fid,
+									fid: Number(localStorage.getItem('frontUserid')),
+									type: 2,
+									tablename: localStorage.getItem('frontSessionTable'),
+									name: localStorage.getItem('username'),
+									picture: this.mpic,
+								}).then(res1 => {
+				
+								})
+							})
+						}
+						this.$http.post('chatmessage/add', {
+							uid: Number(localStorage.getItem('frontUserid')),
+							fid: this.fid,
+							content: this.detailBanner[0],
+							format: 2
+						}).then(res2 => {
+							this.chatForm = {
+								content: ''
+							}
+							this.getChatList()
+						})
+					}
+				})
+			},
+			websocketOnopen: function() {
+				
+			},
+			websocketOnmessage:function(e) {
+				this.getChatList()
+			},
+			getChatList() {
+				this.$http.get('chatmessage/mlist', {
+					params: {
+						page: 1,
+						limit: 1000,
+						uid: Number(localStorage.getItem('frontUserid')),
+						fid: this.fid
+					}
+				}).then(res => {
+					if (res.data && res.data.code == 0) {
+						this.chatList = this.formatMessages(res.data.data.list)
+						let div = document.getElementsByClassName('chat-content')[0]
+						setTimeout(() => {
+							if (div)
+								div.scrollTop = div.scrollHeight
+						}, 0)
+					}
+				})
+			},
+			formatMessages(messages) {
+				let lastTime = null;
+				messages.forEach((message, index) => {
+					const currentTime = new Date(message.addtime).getTime();
+					if (lastTime !== null) {
+						const timeDiff = (currentTime - lastTime) / 1000 / 60; // 转换为分钟
+						if (timeDiff < 3) {
+							message.addtime = ''; // 如果小于3分钟，不显示时间
+						}
+					}
+					lastTime = currentTime;
+				});
+				return messages;
+			},
+			timeFormat(time) {
+				const Time = timeMethod.getTime(time).split("T");
+				//当前消息日期属于周
+				const week = timeMethod.getDateToWeek(time);
+				//当前日期0时
+				const nti = timeMethod.setTimeZero(timeMethod.getNowTime());
+				//消息日期当天0时
+				const mnti = timeMethod.setTimeZero(timeMethod.getTime(time));
+				//计算日期差值
+				const diffDate = timeMethod.calculateTime(nti, mnti);
+				//本周一日期0时 （后面+1是去除当天时间）
+				const fwnti = timeMethod.setTimeZero(timeMethod.countDateStr(-timeMethod.getDateToWeek(timeMethod
+					.getNowTime()).weekID + 1));
+				//计算周日期差值
+				const diffWeek = timeMethod.calculateTime(mnti, fwnti);
+
+				if (diffDate === 0) { //消息发送日期减去当天日期如果等于0则是当天时间
+					return Time[1].slice(0, 5);
+				} else if (diffDate < 172800000) { //当前日期减去消息发送日期小于2天（172800000ms）则是昨天-  一天最大差值前天凌晨00:00:00到今天晚上23:59:59
+					return "昨天 " + Time[1].slice(0, 5);
+				} else if (diffWeek >= 0) { //消息日期减去本周一日期大于0则是本周
+					return week.weekName;
+				} else { //其他时间则是日期
+					return Time[0].slice(5, 10);
+				}
+			},
+			clearChat(){
+				this.websocketOnclose();
+			},
+			uploadSuccess(res) {
+				if (res.code == 0) {
+					this.addChat('upload/' + res.file)
+				}
+			},
+			addChat(ask=null) {
+				this.$http.get('friend/page', {
+					params: {
+						uid: Number(localStorage.getItem('frontUserid')),
+						fid: this.fid,
+					}
+				}).then(obj => {
+					if (obj.data && obj.data.code == 0) {
+						if (!obj.data.data.list.length) {
+							this.$http.post('friend/add', {
+								uid: Number(localStorage.getItem('frontUserid')),
+								fid: this.fid,
+								name: this.fname,
+								picture: this.fpic,
+								type: 2,
+								tablename:  'shejishi' ,
+							}).then(res => {
+								this.$http.post('friend/add', {
+									uid: this.fid,
+									fid: Number(localStorage.getItem('frontUserid')),
+									type: 2,
+									tablename: localStorage.getItem('frontSessionTable'),
+									name: localStorage.getItem('username'),
+									picture: this.mpic,
+								}).then(res1 => {
+			
+								})
+							})
+						}
+						this.$http.post('chatmessage/add', {
+							uid: Number(localStorage.getItem('frontUserid')),
+							fid: this.fid,
+							content: ask?ask:this.chatForm.content,
+							format: ask?2:1
+						}).then(res2 => {
+							this.websocketSend(ask?ask:this.chatForm.content)
+							this.chatForm = {
+								content: ''
+							}
+							this.getChatList()
+						})
+					}
+				})
+			},
+		},
+		components: {
+		}
+	}
+</script>
+
+<style rel="stylesheet/scss" lang="scss" scoped>
+	.detail-preview {
+		padding: 20px calc((100% - 1200px)/2);
+		margin: 0px auto;
+		color: #666;
+		align-content: flex-start;
+		background: #fff;
+		display: flex;
+		width: 100%;
+		font-size: 16px;
+		justify-content: space-between;
+		align-items: flex-start;
+		position: relative;
+		flex-wrap: wrap;
+		.attr {
+			padding: 0;
+			background: none;
+			display: block;
+			width: calc(100% - 0px);
+			position: relative;
+			order: 2;
+			.info {
+				padding: 0;
+				margin: 0 0 0 -6px;
+				align-content: flex-start;
+				background: none;
+				display: flex;
+				width: calc(100% + 12px);
+				align-items: flex-start;
+				flex-wrap: wrap;
+				.title-item {
+					border-radius: 0px;
+					padding: 10px 6px;
+					margin: 0 auto 10px;
+					background: #f5f5f5;
+					display: flex;
+					width: calc(100% - 12px);
+					border-color: #24355930;
+					border-width: 1px;
+					line-height: 1.5;
+					justify-content: space-between;
+					align-items: center;
+					border-style: solid;
+					.detail-title {
+						color: #000;
+						font-weight: 600;
+						font-size: 18px;
+					}
+					.colectBtn {
+						cursor: pointer;
+						border: 0px solid #ddd;
+						border-radius: 8px;
+						padding: 4px 10px;
+						background: none;
+						.icon {
+							color: #666;
+							font-size: inherit;
+						}
+						.text {
+							color: #666;
+							font-size: inherit;
+						}
+					}
+					.colectBtnActive {
+						border: 0px solid #fcbc78;
+						color: #fc8108;
+						background: none;
+						.icon {
+							color: #fc8108;
+						}
+						.text {
+							color: #fc8108;
+						}
+					}
+					.colectBtn:hover {
+						border: 0px solid #fcbc78;
+						color: #fc8108;
+						background: none;
+						.icon {
+							color: #fc8108;
+						}
+						.text {
+							color: #fc8108;
+						}
+					}
+					.colectBtnActive:hover {
+						border: 0px solid #fcbc78;
+						color: #fc8108;
+						background: none;
+						.icon {
+							color: #fc8108;
+						}
+						.text {
+							color: #fc8108;
+						}
+					}
+				}
+				.item {
+					border-radius: 0px;
+					padding: 10px !important;
+					margin: 0 5px 10px;
+					background: #f5f5f5;
+					display: inline-flex;
+					width: calc(50% - 10px);
+					border-color: #24355930;
+					border-width: 1px;
+					border-style: solid;
+					.lable {
+						padding: 0 10px 0 0;
+						color: #333;
+						white-space: nowrap;
+						font-weight: 500;
+						width: auto;
+						font-size: inherit;
+						line-height: 40px;
+						text-align: right;
+						height: auto;
+					}
+					.text {
+						padding: 8px 10px 0;
+						color: inherit;
+						word-break: break-all;
+						flex: 1;
+						font-size: inherit;
+						line-height: 24px;
+						height: auto;
+					}
+					.price {
+						color: #f00;
+					}
+					.bold {
+						font-weight: bold;
+					}
+					.link {
+						cursor: pointer;
+						text-decoration: underline;
+					}
+				}
+				.btn_box {
+					padding: 10px 0;
+					display: flex;
+					font-size: 14px;
+					flex-wrap: wrap;
+				}
+				.editBtn {
+					border: 0px solid rgba(64, 158, 255, .3);
+					cursor: pointer;
+					border-radius: 0px;
+					padding: 0 10px;
+					margin: 0 5px 0 0;
+					color: #fff;
+					background: #2301bb;
+					width: auto;
+					font-size: inherit;
+					line-height: 40px;
+					height: 40px;
+				}
+				.editBtn:hover {
+				}
+				.delBtn {
+					border: 0px solid rgba(209, 6, 2, .3);
+					cursor: pointer;
+					border-radius: 0px;
+					padding: 0 10px;
+					margin: 0 5px 0 0;
+					outline: none;
+					color: #fff;
+					background: #97bdff;
+					width: auto;
+					font-size: inherit;
+					line-height: 40px;
+					height: 40px;
+				}
+				.delBtn:hover {
+				}
+				.chatBtn {
+					border: 0px solid rgba(205, 138, 33, .3);
+					cursor: pointer;
+					border-radius: 0px;
+					padding: 0 10px;
+					margin: 0 5px 0 0;
+					color: #fff;
+					background: #0674fc;
+					width: auto;
+					font-size: inherit;
+					line-height: 40px;
+					height: 40px;
+				}
+				.chatBtn:hover {
+				}
+			}
+		}
+		.detail-swpier2 {
+			margin: 0 40px 20px 0;
+			display: block;
+			width: 100%;
+			text-align: center;
+			height: auto;
+			order: 1;
+			.swiper21 {
+				width: 100%;
+				height: auto;
+				.swiper-button-prev:after {
+					display:none;
+				}
+				.swiper-button-next:after {
+					display:none;
+				}
+				.swiper-item {
+					width: 100%;
+					height: auto;
+					img {
+						border: 1px solid #ddd;
+						object-fit: contain;
+						width: calc(100% - 2px);
+						height: 600px;
+					}
+				}
+				.swiper-button-prev {
+					margin: -12px 0 0;
+					top: 50%;
+					width: 24px;
+					height: 24px;
+					.icon {
+						color: #fff;
+						width: 24px;
+						font-size: 24px;
+						height: 24px;
+					}
+				}
+				.swiper-button-next {
+					margin: -12px 0 0;
+					top: 50%;
+					width: 24px;
+					height: 24px;
+					.icon {
+						color: #fff;
+						width: 24px;
+						font-size: 24px;
+						height: 24px;
+					}
+				}
+			}
+			.swiper22 {
+				margin: 20px 0 0;
+				width: 100%;
+				height: auto;
+				
+				.swiper-button-prev:after {
+					display:none;
+				}
+				.swiper-button-next:after {
+					display:none;
+				}
+				
+				.swiper-item {
+					border-radius: 10px;
+					width: 100%;
+					opacity: 0.4;
+					height: auto;
+					img {
+						border: 1px solid #ddd;
+						object-fit: contain;
+						width: calc(100% - 2px);
+						height: 200px;
+					}
+				}
+				.swiper-slide.swiper-slide-thumb-active div {
+					opacity: 1;
+				}
+				.swiper-button-prev {
+					margin: -7px 0 0;
+					top: 50%;
+					width: 14px;
+					height: 14px;
+					.icon {
+						color: #fff;
+						width: 14px;
+						font-size: 14px;
+						height: 14px;
+					}
+				}
+				.swiper-button-next {
+					margin: -7px 0 0;
+					top: 50%;
+					width: 14px;
+					height: 14px;
+					.icon {
+						color: #fff;
+						width: 14px;
+						font-size: 14px;
+						height: 14px;
+					}
+				}
+			}
+		}
+		.detail-tabs {
+			border: 1px solid #2a3b5e50;
+			border-radius: 8px;
+			box-shadow: none;
+			padding: 10px;
+			margin: 20px auto 40px;
+			background: #fff;
+			flex: 1;
+			display: flex;
+			width: 100%;
+			order: 21;
+			& /deep/ .el-tabs__header .el-tabs__nav-wrap {
+				margin-bottom: 0;
+			}
+			/deep/ .el-tabs__header {
+				padding: 30px 10px;
+				margin: 0 20px 0 0;
+				flex-direction: column;
+				background: #f5f5f5;
+				display: flex;
+				width: 140px;
+				border-color: #24355950;
+				border-width: 1px;
+				border-style: solid;
+				flex-wrap: wrap;
+			}
+			
+			/deep/ .el-tabs__header .el-tabs__item {
+				border: 0;
+				padding: 0 0px;
+				margin: 0 0 20px;
+				color: #000;
+				font-weight: 500;
+				display: block;
+				font-size: 16px;
+				line-height: 34px;
+				transition: all 0s;
+				background: none;
+				width: 120px;
+				position: relative;
+				list-style: none;
+				text-align: center;
+				height: 34px;
+			}
+			
+			/deep/ .el-tabs__header .el-tabs__item:hover {
+				border: 0;
+				margin: 0 0 20px;
+				color: #fff;
+				background: #3397da;
+				width: 120px;
+				font-size: 16px;
+				line-height: 34px;
+				text-align: center;
+				height: 34px;
+			}
+			
+			/deep/ .el-tabs__header .el-tabs__item.is-active {
+				border: 0;
+				margin: 0 0 20px;
+				color: #fff;
+				background: #3397da;
+				width: 120px;
+				font-size: 16px;
+				line-height: 34px;
+				text-align: center;
+				height: 34px;
+			}
+			
+			/deep/ .el-tabs__content {
+				border: 1px solid #24355950;
+				padding: 15px;
+				width: 100%;
+			}
+		}
+	}
+	.share_view{
+		box-shadow: 0 1px 6px rgba(0,0,0,.3);
+		z-index: 11;
+		bottom: 20%;
+		background: #fff;
+		position: fixed;
+		right: 0;
+		.share:last-of-type{
+			border:none;
+		}
+	}
+	.chat-content {
+		padding-bottom: 20px;
+		width: 100%;
+		margin-bottom: 10px;
+		max-height: 300px;
+		height: 300px;
+		overflow-y: scroll;
+		border: 1px solid #eeeeee;
+		background: #fff;
+	
+		.addtime {
+			width: 100%;
+			text-align: center;
+			font-size: 12px;
+		}
+		
+		.left-content {
+			float: left;
+			margin-bottom: 10px;
+			padding: 10px;
+			max-width: 80%;
+			display: flex;
+			align-items: center;
+		}
+	
+		.right-content {
+			float: right;
+			margin-bottom: 10px;
+			padding: 10px;
+			max-width: 80%;
+			display: flex;
+			align-items: center;
+		}
+	}
+	
+	.clear-float {
+		clear: both;
+	}
+	.idea1 {
+		background: #fff;
+		width: 100%;
+		height: 1px;
+		order: 4;
+	}
+	.idea2 {
+		background: #fff;
+		width: 100%;
+		height: 1px;
+		order: 6;
+	}
+</style>
